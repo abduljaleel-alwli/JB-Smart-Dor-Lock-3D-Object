@@ -14,6 +14,10 @@ const TOP_TILT = 0.2;
 const BOTTOM_TILT = 0.75;
 /** Lower chamfer narrows to this width at its tip. */
 const BOTTOM_TIP_W = 0.46;
+/** How far the black rear body stands off the back of the panel. */
+const REAR_D = 0.3;
+/** Back surface of the panel; the rear body grows from here. */
+const REAR_BACK = -PANEL_D;
 
 type Pt = [number, number, number]; // x, y, corner radius
 
@@ -139,9 +143,9 @@ export function SmartLock() {
   return (
     <group>
       {/* Rear mounting body, rising above the panel with a sloped cap */}
-      <RoundedBox args={[PANEL_W * 0.86, PANEL_H * 0.93, 0.42]} radius={0.06} smoothness={4} position={[0.04, 0.05, -0.33]} material={mats.housing} castShadow />
-      <group position={[0.07, PANEL_H / 2 - 0.05, -0.38]} rotation-x={-0.35}>
-        <RoundedBox args={[PANEL_W * 0.74, 0.7, 0.42]} radius={0.1} smoothness={5} material={mats.housing} castShadow />
+      <RoundedBox args={[PANEL_W * 0.86, PANEL_H * 0.93, REAR_D]} radius={0.06} smoothness={4} position={[0.04, 0.05, REAR_BACK - REAR_D / 2]} material={mats.housing} castShadow />
+      <group position={[0.07, PANEL_H / 2 - 0.05, REAR_BACK - REAR_D / 2 - 0.05]} rotation-x={-0.35}>
+        <RoundedBox args={[PANEL_W * 0.74, 0.7, REAR_D]} radius={0.1} smoothness={5} material={mats.housing} castShadow />
       </group>
 
       {/* Upper camera facet, hinged at the top bend and leaning back */}
