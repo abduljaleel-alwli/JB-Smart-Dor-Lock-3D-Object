@@ -67,8 +67,8 @@ export function createFaceTextures() {
   const cols = [0.28, 0.5, 0.72];
   keys.forEach((row, r) =>
     row.forEach((k, i) => {
-      const x = cols[i] * W;
-      const y = LAYOUT.rows[r] * H;
+      const x = cols[i]! * W;
+      const y = LAYOUT.rows[r]! * H;
       if (k === "*") glowText(c, "✱", x, y, 64, "#ff3df0");
       else if (k === "bell") {
         c.strokeStyle = "#cfe3ff";
@@ -90,7 +90,7 @@ export function createFaceTextures() {
   );
 
   // NFC card symbol between rows 2 and 3
-  const ny = (LAYOUT.rows[1] + LAYOUT.rows[2]) / 2 * H;
+  const ny = (LAYOUT.rows[1]! + LAYOUT.rows[2]!) / 2 * H;
   c.strokeStyle = "#9fb8d8";
   c.lineWidth = 4;
   c.strokeRect(W / 2 - 34, ny - 14, 68, 28);

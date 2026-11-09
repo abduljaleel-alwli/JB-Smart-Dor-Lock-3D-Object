@@ -70,7 +70,7 @@ export function SmartLock() {
   const faceGeo = useMemo(() => {
     const g = new THREE.ShapeGeometry(roundedRectShape(PANEL_W, PANEL_H, 0.08), 12);
     // Map UVs to panel bounds so the canvas covers the whole face.
-    const pos = g.attributes.position;
+    const pos = g.getAttribute("position");
     const uv = new Float32Array(pos.count * 2);
     for (let i = 0; i < pos.count; i++) {
       uv[i * 2] = pos.getX(i) / PANEL_W + 0.5;
