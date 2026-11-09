@@ -46,7 +46,7 @@ interface SegmentProps {
   outer: Pt[];
   /** v of the local y=0 line, for texture mapping. */
   vPivot: number;
-  mats: Record<string, THREE.Material>;
+  mats: { copper: THREE.Material; core: THREE.Material; glass: THREE.Material };
   children?: ReactNode;
 }
 
