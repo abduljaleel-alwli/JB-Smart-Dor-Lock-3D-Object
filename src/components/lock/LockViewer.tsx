@@ -5,7 +5,7 @@ import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import type { OrbitControls as OrbitImpl } from "three-stdlib";
 import { SmartLock } from "./SmartLock";
 
-const DEFAULT_CAM: [number, number, number] = [3.2, 0.8, 5.2];
+const DEFAULT_CAM: [number, number, number] = [4.6, 1.2, 8.6];
 
 export function LockViewer() {
   const controls = useRef<OrbitImpl>(null);
@@ -46,7 +46,7 @@ export function LockViewer() {
           target={[0, 0, 0]}
         />
         <EffectComposer>
-          <Bloom intensity={0.7} luminanceThreshold={0.85} mipmapBlur />
+          <Bloom intensity={0.45} luminanceThreshold={0.9} mipmapBlur />
         </EffectComposer>
       </Canvas>
 

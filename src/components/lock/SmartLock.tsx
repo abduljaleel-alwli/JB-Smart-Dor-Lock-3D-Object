@@ -37,8 +37,8 @@ export function SmartLock() {
       }),
       housing: new THREE.MeshPhysicalMaterial({ color: "#0b0b0d", metalness: 0.3, roughness: 0.55 }),
       glass: new THREE.MeshPhysicalMaterial({
-        color: "#020203", metalness: 0.1, roughness: 0.04, clearcoat: 1, clearcoatRoughness: 0.02,
-        map: face, emissiveMap: face, emissive: new THREE.Color("#ffffff"), emissiveIntensity: 1.6,
+        color: "#020203", metalness: 0.1, roughness: 0.08, clearcoat: 1, envMapIntensity: 0.5, clearcoatRoughness: 0.02,
+        map: face, emissiveMap: face, emissive: new THREE.Color("#ffffff"), emissiveIntensity: 1.05,
       }),
       lens: new THREE.MeshPhysicalMaterial({
         color: "#0a0d14", metalness: 0.2, roughness: 0.05, transmission: 0.2, clearcoat: 1, ior: 1.6,
