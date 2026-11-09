@@ -133,10 +133,8 @@ export function SmartLock() {
 
   // Local y inside a segment whose pivot sits at vPivot.
   const local = (vPivot: number, v: number) => (vPivot - v) * PANEL_H;
-  const hTopV = local(LAYOUT.bottomBend, LAYOUT.handleTop) - (yOf(LAYOUT.bottomBend) - yBot);
   const handleCenter = (local(LAYOUT.topBend, LAYOUT.handleTop) + local(LAYOUT.topBend, LAYOUT.handleBottom)) / 2;
   const handleH = (LAYOUT.handleBottom - LAYOUT.handleTop) * PANEL_H;
-  void hTopV;
 
   return (
     <group>
