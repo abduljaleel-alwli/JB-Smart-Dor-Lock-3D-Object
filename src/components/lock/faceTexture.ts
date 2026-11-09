@@ -2,15 +2,18 @@ import * as THREE from "three";
 
 // Positions are fractions of the front panel (u: 0 left → 1 right, v: 0 top → 1 bottom).
 export const LAYOUT = {
-  camera: 0.125,
-  display: 0.175,
-  rows: [0.27, 0.325, 0.38, 0.435],
-  lock: 0.475,
-  fingerprint: 0.555,
-  handleTop: 0.76,
-  handleBottom: 0.86,
-  logo: 0.915,
-  led: 0.955,
+  camera: 0.12,
+  display: 0.172,
+  rows: [0.275, 0.325, 0.375, 0.42],
+  lock: 0.458,
+  fingerprint: 0.54,
+  handleTop: 0.75,
+  handleBottom: 0.835,
+  logo: 0.885,
+  led: 0.928,
+  /** Where the panel bends: upper camera facet ends, lower chamfer begins. */
+  topBend: 0.215,
+  bottomBend: 0.945,
 };
 
 const W = 512;
