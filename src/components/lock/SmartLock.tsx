@@ -93,7 +93,7 @@ function ExteriorLock() {
   const face = useMemo(() => createFaceTextures(), []);
   const mats = useMemo(
     () => ({
-      copper: new THREE.MeshPhysicalMaterial({ color: "#b8775c", metalness: 0.92, roughness: 0.3, clearcoat: 0.35 }),
+      copper: new THREE.MeshPhysicalMaterial({ color: "#c28268", metalness: 0.58, roughness: 0.32, clearcoat: 0.25 }),
       housing: new THREE.MeshPhysicalMaterial({ color: "#141517", metalness: 0.28, roughness: 0.48, clearcoat: 0.2 }),
       housingEdge: new THREE.MeshStandardMaterial({ color: "#090a0b", metalness: 0.35, roughness: 0.45 }),
       core: new THREE.MeshStandardMaterial({ color: "#050506", roughness: 0.5 }),
@@ -101,8 +101,8 @@ function ExteriorLock() {
         color: "#07090b", metalness: 0.12, roughness: 0.09, clearcoat: 1, clearcoatRoughness: 0.035,
         envMapIntensity: 0.55, map: face, emissiveMap: face, emissive: new THREE.Color("#ffffff"), emissiveIntensity: 0.9,
       }),
-      lens: new THREE.MeshPhysicalMaterial({ color: "#26374a", metalness: 0.25, roughness: 0.09, clearcoat: 1, ior: 1.55 }),
-      lensRing: new THREE.MeshStandardMaterial({ color: "#484e55", metalness: 0.65, roughness: 0.28 }),
+      lens: new THREE.MeshPhysicalMaterial({ color: "#26374a", metalness: 0, roughness: 0.24, clearcoat: 0.45, emissive: "#101820", emissiveIntensity: 0.35 }),
+      lensRing: new THREE.MeshStandardMaterial({ color: "#414850", metalness: 0.12, roughness: 0.4 }),
       blueGlow: new THREE.MeshStandardMaterial({ color: "#08265f", emissive: "#1764ff", emissiveIntensity: 3.2 }),
       sensor: new THREE.MeshPhysicalMaterial({ color: "#02050a", roughness: 0.32, clearcoat: 0.35, envMapIntensity: 0.2 }),
       handle: new THREE.MeshPhysicalMaterial({ color: "#141619", metalness: 0.55, roughness: 0.28, clearcoat: 0.5 }),
