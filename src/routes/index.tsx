@@ -5,10 +5,10 @@ export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "J.B Access Smart Lock — Interactive 3D" },
-      { name: "description", content: "Explore the J.B Access smart door lock in interactive 3D: rotate, zoom and inspect every detail." },
-      { property: "og:title", content: "J.B Access Smart Lock — Interactive 3D" },
-      { property: "og:description", content: "Rotate and zoom the J.B Access smart lock in 3D." },
+      { title: "قفل J.B الذكي — مجسم ثلاثي الأبعاد بالوجهين" },
+      { name: "description", content: "استكشف الوجهين الخارجي والداخلي لقفل J.B الذكي مثبتين على قطاع باب، مع تدوير وتقريب وتفاصيل مستمدة من صور المنتج." },
+      { property: "og:title", content: "قفل J.B الذكي — مجسم ثلاثي الأبعاد بالوجهين" },
+      { property: "og:description", content: "شاهد الوحدة الخارجية والوحدة الداخلية لقفل J.B من جميع الزوايا." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -18,11 +18,11 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <main className="relative h-screen w-full overflow-hidden bg-background">
-      <header className="pointer-events-none absolute left-6 top-6 z-10">
-        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">J.B Access</p>
-        <h1 className="mt-1 text-2xl font-light text-foreground">Smart Door Lock</h1>
-        <p className="mt-1 text-xs text-muted-foreground">Drag to rotate · Scroll or pinch to zoom</p>
+    <main dir="rtl" className="relative h-screen w-full overflow-hidden bg-background">
+      <header className="pointer-events-none absolute right-5 top-5 z-10 sm:right-7 sm:top-7">
+        <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground sm:text-xs">J.B Access</p>
+        <h1 className="mt-1 text-xl font-light text-foreground sm:text-2xl">القفل الذكي بالوجهين</h1>
+        <p className="mt-1 text-[11px] text-muted-foreground sm:text-xs">اسحب للتدوير · استخدم العجلة أو القرص للتقريب</p>
       </header>
       <LockViewer />
     </main>
