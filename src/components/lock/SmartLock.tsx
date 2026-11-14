@@ -157,7 +157,7 @@ function ExteriorLock() {
       <mesh geometry={geometries.glass} material={mats.glass} position-z={0.004} />
 
       {/* Three vertical lens windows in one recessed horizontal camera bar. */}
-      <PanelFeature v={LAYOUT.camera} lift={0.045}>
+      <PanelFeature v={LAYOUT.camera} lift={0.2}>
         <RoundedBox args={[0.43, 0.17, 0.018]} radius={0.025} smoothness={4} material={mats.housingEdge} />
         {[-0.12, 0, 0.12].map((x) => (
           <group key={x} position={[x, 0, 0.014]}>
