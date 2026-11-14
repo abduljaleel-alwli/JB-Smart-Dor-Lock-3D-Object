@@ -36,7 +36,10 @@ function panelOutline(pad = 0): Pt[] {
 }
 
 /** Bends every vertex around the same two hinge lines, keeping the copper frame seamless. */
-function bendPanel(geometry: THREE.BufferGeometry) {
+function bendPanel(source: THREE.BufferGeometry) {
+  // Long triangles would otherwise cut across a hinge and fold through the glass.
+  const geometry = new TessellateModifier(0.16, 6).modify(source);
+  source.dispose();
   const position = geometry.getAttribute("position");
   for (let i = 0; i < position.count; i++) {
     const x0 = position.getX(i);
