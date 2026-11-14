@@ -126,7 +126,7 @@ function ExteriorLock() {
     const uv = new Float32Array(pos.count * 2);
     for (let i = 0; i < pos.count; i++) {
       uv[i * 2] = pos.getX(i) / PANEL_W + 0.5;
-      uv[i * 2 + 1] = 0.5 - pos.getY(i) / PANEL_H;
+      uv[i * 2 + 1] = 0.5 + pos.getY(i) / PANEL_H;
     }
     glass.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
     bendPanel(glass);
