@@ -77,7 +77,8 @@ export function InteriorLock() {
       <Fastener position={[0.16, -0.285, 0.229]} radius={0.018} />
 
       {/* Handle neck and its ribbed, sloping underside. */}
-      <RoundedBox args={[0.35, 0.42, 0.39]} radius={0.04} smoothness={4} position={[0, -0.36, 0.39]} rotation-x={-0.18} material={mats.side} castShadow />
+      <RoundedBox args={[0.35, 0.34, 0.39]} radius={0.04} smoothness={4} position={[0, -0.39, 0.39]} rotation-x={-0.18} material={mats.side} castShadow />
+      <RoundedBox args={[0.3, 0.5, 0.3]} radius={0.035} smoothness={4} position={[0, -0.48, 0.52]} material={mats.side} castShadow />
       <RoundedBox args={[0.33, 0.48, 0.32]} radius={0.025} smoothness={3} position={[0, -0.72, 0.36]} rotation-x={0.38} material={mats.side} castShadow />
       {[0, 1, 2, 3].map((i) => (
         <RoundedBox
@@ -93,7 +94,6 @@ export function InteriorLock() {
 
       {/* Broad vertical paddle visible in all interior three-quarter photographs. */}
       <RoundedBox args={[0.52, 0.84, 0.17]} radius={0.075} smoothness={7} position={[0, -0.635, 0.69]} material={mats.grip} castShadow />
-      <RoundedBox args={[0.46, 0.77, 0.012]} radius={0.06} smoothness={5} position={[0, -0.635, 0.781]} material={mats.body} />
 
       {/* Circular thumbturn base and narrow rotating lever. */}
       <mesh position={[0, -1.28, 0.255]} rotation-x={Math.PI / 2} material={mats.side} castShadow>

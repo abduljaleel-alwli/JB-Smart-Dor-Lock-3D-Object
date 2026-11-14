@@ -67,9 +67,9 @@ function bendPanel(source: THREE.BufferGeometry) {
   return geometry;
 }
 
-function PanelFeature({ v, children }: { v: number; children: ReactNode }) {
+function PanelFeature({ v, lift = 0.012, children }: { v: number; lift?: number; children: ReactNode }) {
   const y = yOf(v);
-  const zFront = 0.012;
+  const zFront = lift;
   if (v < LAYOUT.topBend) {
     const d = y - yTop;
     return (
@@ -101,10 +101,10 @@ function ExteriorLock() {
         color: "#07090b", metalness: 0.12, roughness: 0.09, clearcoat: 1, clearcoatRoughness: 0.035,
         envMapIntensity: 0.55, map: face, emissiveMap: face, emissive: new THREE.Color("#ffffff"), emissiveIntensity: 0.9,
       }),
-      lens: new THREE.MeshPhysicalMaterial({ color: "#101722", metalness: 0.3, roughness: 0.07, clearcoat: 1, ior: 1.55 }),
-      lensRing: new THREE.MeshStandardMaterial({ color: "#222528", metalness: 0.75, roughness: 0.3 }),
+      lens: new THREE.MeshPhysicalMaterial({ color: "#26374a", metalness: 0.25, roughness: 0.09, clearcoat: 1, ior: 1.55 }),
+      lensRing: new THREE.MeshStandardMaterial({ color: "#484e55", metalness: 0.65, roughness: 0.28 }),
       blueGlow: new THREE.MeshStandardMaterial({ color: "#08265f", emissive: "#1764ff", emissiveIntensity: 3.2 }),
-      sensor: new THREE.MeshPhysicalMaterial({ color: "#060a10", roughness: 0.18, clearcoat: 1 }),
+      sensor: new THREE.MeshPhysicalMaterial({ color: "#02050a", roughness: 0.32, clearcoat: 0.35, envMapIntensity: 0.2 }),
       handle: new THREE.MeshPhysicalMaterial({ color: "#141619", metalness: 0.55, roughness: 0.28, clearcoat: 0.5 }),
       handleMetal: new THREE.MeshStandardMaterial({ color: "#555b61", metalness: 0.9, roughness: 0.25 }),
       gold: new THREE.MeshStandardMaterial({ color: "#88734b", metalness: 0.85, roughness: 0.22 }),
@@ -152,12 +152,12 @@ function ExteriorLock() {
       <RoundedBox args={[0.81, 4.16, REAR_D]} radius={0.075} smoothness={6} position={[0.025, 0.1, -PANEL_D - REAR_D / 2]} material={mats.housing} castShadow />
       <RoundedBox args={[0.77, 4.04, 0.018]} radius={0.06} smoothness={4} position={[0.025, 0.1, -PANEL_D - 0.012]} material={mats.housingEdge} />
 
-      <mesh geometry={geometries.trim} material={mats.copper} position-z={-PANEL_D} castShadow />
+      <mesh geometry={geometries.trim} material={[mats.copper, mats.housingEdge]} position-z={-PANEL_D} castShadow />
       <mesh geometry={geometries.core} material={mats.core} position-z={-PANEL_D + 0.002} />
       <mesh geometry={geometries.glass} material={mats.glass} position-z={0.004} />
 
       {/* Three vertical lens windows in one recessed horizontal camera bar. */}
-      <PanelFeature v={LAYOUT.camera}>
+      <PanelFeature v={LAYOUT.camera} lift={0.045}>
         <RoundedBox args={[0.43, 0.17, 0.018]} radius={0.025} smoothness={4} material={mats.housingEdge} />
         {[-0.12, 0, 0.12].map((x) => (
           <group key={x} position={[x, 0, 0.014]}>
@@ -184,12 +184,11 @@ function ExteriorLock() {
         <mesh position-z={0.008} material={mats.blueGlow}>
           <torusGeometry args={[0.083, 0.0075, 16, 72]} />
         </mesh>
-        <pointLight color="#2f73ff" intensity={0.12} distance={0.5} position-z={0.07} />
       </PanelFeature>
 
       {/* Small flush rectangular slider with its fine central division. */}
       <PanelFeature v={handleV}>
-        <RoundedBox args={[0.32, handleH + 0.025, 0.018]} radius={0.035} smoothness={5} material={mats.lensRing} />
+        <RoundedBox args={[0.32, handleH + 0.025, 0.018]} radius={0.035} smoothness={5} material={mats.handle} />
         <RoundedBox args={[0.275, handleH - 0.02, 0.035]} radius={0.03} smoothness={5} position-z={0.016} material={mats.handle} castShadow />
         <mesh position={[0, 0, 0.036]} material={mats.handleMetal}>
           <boxGeometry args={[0.009, handleH - 0.065, 0.003]} />

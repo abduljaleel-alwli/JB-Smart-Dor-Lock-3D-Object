@@ -128,17 +128,9 @@ export function createFaceTextures() {
 
   // The exact photographed product mark, placed as a flat original asset.
   const gy = LAYOUT.logo * H;
-  c.font = "italic 800 76px Georgia, serif";
-  c.fillStyle = "#bdc9d1";
-  c.fillText("J.B", W / 2, gy - 12);
-  c.font = "700 23px Arial";
-  c.fillText("A C C E S S", W / 2, gy + 40);
   const logo = new Image();
   logo.onload = () => {
-    c.save();
-    c.globalCompositeOperation = "screen";
     c.drawImage(logo, W / 2 - 126, gy - 79, 252, 148);
-    c.restore();
     texture.needsUpdate = true;
   };
   logo.src = logoAsset.url;
