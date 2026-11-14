@@ -1,6 +1,7 @@
 import { useEffect, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 import { RoundedBox } from "@react-three/drei";
+import { TessellateModifier } from "three/addons/modifiers/TessellateModifier.js";
 import { createFaceTextures, LAYOUT } from "./faceTexture";
 import { createPaintTexture, roundedPoly, type Pt } from "./geometry";
 import { InteriorLock } from "./InteriorLock";
