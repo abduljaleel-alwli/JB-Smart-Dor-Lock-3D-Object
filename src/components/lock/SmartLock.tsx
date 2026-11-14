@@ -1,197 +1,245 @@
 import { useEffect, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 import { RoundedBox } from "@react-three/drei";
+import { TessellateModifier } from "three/addons/modifiers/TessellateModifier.js";
 import { createFaceTextures, LAYOUT } from "./faceTexture";
+import { createPaintTexture, roundedPoly, type Pt } from "./geometry";
+import { InteriorLock } from "./InteriorLock";
 
-// Units ≈ decimetres.
+// Proportions measured against the nine supplied photographs; units ≈ decimetres.
 export const PANEL_W = 0.72;
 export const PANEL_H = 4.2;
-const PANEL_D = 0.12;
-const TRIM = 0.026;
-/** Upper camera facet leans back, like the reference photo. */
-const TOP_TILT = 0.2;
-/** Lower chamfer folds back sharply toward the door. */
-const BOTTOM_TILT = 0.75;
-/** Lower chamfer narrows to this width at its tip. */
-const BOTTOM_TIP_W = 0.46;
-/** How far the black rear body stands off the back of the panel. */
-const REAR_D = 0.3;
-/** Back surface of the panel; the rear body grows from here. */
-const REAR_BACK = -PANEL_D;
-
-type Pt = [number, number, number]; // x, y, corner radius
-
-/** Polygon with per-corner rounded corners. */
-function roundedPoly(pts: Pt[]) {
-  const s = new THREE.Shape();
-  const n = pts.length;
-  pts.forEach((p, i) => {
-    const prev = pts[(i - 1 + n) % n]!;
-    const next = pts[(i + 1) % n]!;
-    const [x, y, r] = p;
-    const toPrev = new THREE.Vector2(prev[0] - x, prev[1] - y).normalize();
-    const toNext = new THREE.Vector2(next[0] - x, next[1] - y).normalize();
-    const a = [x + toPrev.x * r, y + toPrev.y * r];
-    const b = [x + toNext.x * r, y + toNext.y * r];
-    if (i === 0) s.moveTo(a[0]!, a[1]!);
-    else s.lineTo(a[0]!, a[1]!);
-    if (r > 0) s.quadraticCurveTo(x, y, b[0]!, b[1]!);
-  });
-  s.closePath();
-  return s;
-}
+const PANEL_D = 0.1;
+const TRIM = 0.018;
+const TOP_TILT = 0.23;
+const BOTTOM_TILT = 0.48;
+const BOTTOM_TIP_SCALE = 0.92;
+const REAR_D = 0.24;
+const DOOR_D = 0.46;
 
 const yOf = (v: number) => PANEL_H / 2 - v * PANEL_H;
+const yTop = yOf(LAYOUT.topBend);
+const yBot = yOf(LAYOUT.bottomBend);
+const hBottom = (1 - LAYOUT.bottomBend) * PANEL_H;
 
-interface SegmentProps {
-  /** Outline in local coords (pivot at y=0 on the bend). */
-  outline: Pt[];
-  /** Trim outline (outline grown on the free edges). */
-  outer: Pt[];
-  /** v of the local y=0 line, for texture mapping. */
-  vPivot: number;
-  mats: { copper: THREE.Material; core: THREE.Material; glass: THREE.Material };
-  children?: ReactNode;
+function panelOutline(pad = 0): Pt[] {
+  const w = PANEL_W / 2 + pad;
+  const top = PANEL_H / 2 + pad;
+  const bottom = -PANEL_H / 2 - pad;
+  const radius = pad ? 0.078 : 0.06;
+  return [
+    [-w, bottom, radius], [w, bottom, radius],
+    [w, yBot, 0], [w, yTop, 0],
+    [w, top, radius], [-w, top, radius],
+    [-w, yTop, 0], [-w, yBot, 0],
+  ];
 }
 
-function Segment({ outline, outer, vPivot, mats, children }: SegmentProps) {
-  const { trimGeo, faceGeo, coreGeo } = useMemo(() => {
-    const outerShape = roundedPoly(outer);
-    // Inset the hole a hair so it never touches the outer edge at the bends.
-    const hole = roundedPoly(outline.map(([x, y, r]) => [x * 0.999, y * 0.997, r] as Pt));
-    outerShape.holes.push(hole as unknown as THREE.Path);
-    const trimGeo = new THREE.ExtrudeGeometry(outerShape, {
-      depth: PANEL_D, bevelEnabled: true, bevelSize: 0.005, bevelThickness: 0.005, bevelSegments: 3, curveSegments: 10,
-    });
-    const faceShape = roundedPoly(outline);
-    const faceGeo = new THREE.ShapeGeometry(faceShape, 10);
-    const pos = faceGeo.getAttribute("position");
-    const uv = new Float32Array(pos.count * 2);
-    for (let i = 0; i < pos.count; i++) {
-      uv[i * 2] = pos.getX(i) / PANEL_W + 0.5;
-      uv[i * 2 + 1] = 1 - (vPivot - pos.getY(i) / PANEL_H);
+/** Bends every vertex around the same two hinge lines, keeping the copper frame seamless. */
+function bendPanel(source: THREE.BufferGeometry) {
+  // Long triangles would otherwise cut across a hinge and fold through the glass.
+  const geometry = new TessellateModifier(0.16, 6).modify(source);
+  source.dispose();
+  const position = geometry.getAttribute("position");
+  for (let i = 0; i < position.count; i++) {
+    const x0 = position.getX(i);
+    const y0 = position.getY(i);
+    const z0 = position.getZ(i);
+    let x = x0;
+    let y = y0;
+    let z = z0;
+    if (y0 > yTop) {
+      const d = y0 - yTop;
+      y = yTop + d * Math.cos(TOP_TILT);
+      z = z0 - d * Math.sin(TOP_TILT);
+    } else if (y0 < yBot) {
+      const d = yBot - y0;
+      const ratio = d / hBottom;
+      x = x0 * (1 - (1 - BOTTOM_TIP_SCALE) * ratio);
+      y = yBot - d * Math.cos(BOTTOM_TILT);
+      z = z0 - d * Math.sin(BOTTOM_TILT);
     }
-    faceGeo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
-    const coreGeo = new THREE.ExtrudeGeometry(faceShape, { depth: PANEL_D - 0.004, bevelEnabled: false, curveSegments: 10 });
-    return { trimGeo, faceGeo, coreGeo };
-  }, [outline, outer, vPivot]);
-
-  useEffect(() => () => { trimGeo.dispose(); faceGeo.dispose(); coreGeo.dispose(); }, [trimGeo, faceGeo, coreGeo]);
-
-  return (
-    <group position-z={-PANEL_D}>
-      <mesh geometry={trimGeo} material={mats.copper} castShadow />
-      <mesh geometry={coreGeo} material={mats.core} />
-      <mesh geometry={faceGeo} material={mats.glass} position-z={PANEL_D + 0.004} />
-      <group position-z={PANEL_D + 0.006}>{children}</group>
-    </group>
-  );
+    position.setXYZ(i, x, y, z);
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  return geometry;
 }
 
-export function SmartLock() {
-  const face = useMemo(() => createFaceTextures(), []);
+function PanelFeature({ v, lift = 0.012, children }: { v: number; lift?: number; children: ReactNode }) {
+  const y = yOf(v);
+  const zFront = lift;
+  if (v < LAYOUT.topBend) {
+    const d = y - yTop;
+    return (
+      <group position={[0, yTop + d * Math.cos(TOP_TILT), zFront - d * Math.sin(TOP_TILT)]} rotation-x={-TOP_TILT}>
+        {children}
+      </group>
+    );
+  }
+  if (v > LAYOUT.bottomBend) {
+    const d = yBot - y;
+    return (
+      <group position={[0, yBot - d * Math.cos(BOTTOM_TILT), zFront - d * Math.sin(BOTTOM_TILT)]} rotation-x={BOTTOM_TILT}>
+        {children}
+      </group>
+    );
+  }
+  return <group position={[0, y, zFront]}>{children}</group>;
+}
 
+function ExteriorLock() {
+  const face = useMemo(() => createFaceTextures(), []);
   const mats = useMemo(
     () => ({
-      copper: new THREE.MeshPhysicalMaterial({ color: "#c7774a", metalness: 1, roughness: 0.28, clearcoat: 0.4, clearcoatRoughness: 0.2 }),
-      housing: new THREE.MeshPhysicalMaterial({ color: "#0b0b0d", metalness: 0.3, roughness: 0.5, clearcoat: 0.3 }),
-      core: new THREE.MeshStandardMaterial({ color: "#050506" }),
+      copper: new THREE.MeshPhysicalMaterial({ color: "#c28268", metalness: 0.58, roughness: 0.32, clearcoat: 0.25 }),
+      housing: new THREE.MeshPhysicalMaterial({ color: "#141517", metalness: 0.28, roughness: 0.48, clearcoat: 0.2 }),
+      housingEdge: new THREE.MeshStandardMaterial({ color: "#090a0b", metalness: 0.35, roughness: 0.45 }),
+      core: new THREE.MeshStandardMaterial({ color: "#050506", roughness: 0.5 }),
       glass: new THREE.MeshPhysicalMaterial({
-        color: "#020203", metalness: 0.1, roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 0.5,
-        map: face, emissiveMap: face, emissive: new THREE.Color("#ffffff"), emissiveIntensity: 1.05,
+        color: "#07090b", metalness: 0.12, roughness: 0.09, clearcoat: 1, clearcoatRoughness: 0.035,
+        envMapIntensity: 0.55, map: face, emissiveMap: face, emissive: new THREE.Color("#ffffff"), emissiveIntensity: 0.9,
       }),
-      lens: new THREE.MeshPhysicalMaterial({ color: "#0a0d14", metalness: 0.2, roughness: 0.05, clearcoat: 1, ior: 1.6 }),
-      lensRing: new THREE.MeshStandardMaterial({ color: "#3a3d44", metalness: 1, roughness: 0.3 }),
-      blueGlow: new THREE.MeshStandardMaterial({ color: "#0a2a80", emissive: "#2e6bff", emissiveIntensity: 4 }),
-      sensor: new THREE.MeshPhysicalMaterial({ color: "#05070c", roughness: 0.15, clearcoat: 1 }),
-      handle: new THREE.MeshPhysicalMaterial({ color: "#141417", metalness: 0.6, roughness: 0.25, clearcoat: 0.6 }),
-      handleMetal: new THREE.MeshStandardMaterial({ color: "#2a2a30", metalness: 1, roughness: 0.2 }),
+      lens: new THREE.MeshPhysicalMaterial({ color: "#26374a", metalness: 0, roughness: 0.24, clearcoat: 0.45, emissive: "#101820", emissiveIntensity: 0.35 }),
+      lensRing: new THREE.MeshStandardMaterial({ color: "#414850", metalness: 0.12, roughness: 0.4 }),
+      blueGlow: new THREE.MeshStandardMaterial({ color: "#08265f", emissive: "#1764ff", emissiveIntensity: 3.2 }),
+      sensor: new THREE.MeshPhysicalMaterial({ color: "#02050a", roughness: 0.32, clearcoat: 0.35, envMapIntensity: 0.2 }),
+      handle: new THREE.MeshPhysicalMaterial({ color: "#141619", metalness: 0.55, roughness: 0.28, clearcoat: 0.5 }),
+      handleMetal: new THREE.MeshStandardMaterial({ color: "#555b61", metalness: 0.9, roughness: 0.25 }),
+      gold: new THREE.MeshStandardMaterial({ color: "#88734b", metalness: 0.85, roughness: 0.22 }),
     }),
     [face],
   );
-  useEffect(() => () => { face.dispose(); Object.values(mats).forEach((m) => m.dispose()); }, [face, mats]);
 
-  const w = PANEL_W / 2;
-  const t = TRIM;
-  const yTop = yOf(LAYOUT.topBend);
-  const yBot = yOf(LAYOUT.bottomBend);
-  const hTop = LAYOUT.topBend * PANEL_H;
-  const hMid = yTop - yBot;
-  const hBot = (1 - LAYOUT.bottomBend) * PANEL_H;
-  const tw = BOTTOM_TIP_W / 2;
+  const geometries = useMemo(() => {
+    const inner = roundedPoly(panelOutline());
+    const outer = roundedPoly(panelOutline(TRIM));
+    const hole = roundedPoly(panelOutline(-0.001));
+    outer.holes.push(hole as unknown as THREE.Path);
+    const trim = bendPanel(new THREE.ExtrudeGeometry(outer, {
+      depth: PANEL_D, bevelEnabled: true, bevelSize: 0.0035, bevelThickness: 0.0035, bevelSegments: 3, curveSegments: 12,
+    }));
+    const core = bendPanel(new THREE.ExtrudeGeometry(inner, { depth: PANEL_D - 0.004, bevelEnabled: false, curveSegments: 12 }));
+    const glass = new THREE.ShapeGeometry(inner, 12);
+    const pos = glass.getAttribute("position");
+    const uv = new Float32Array(pos.count * 2);
+    for (let i = 0; i < pos.count; i++) {
+      uv[i * 2] = pos.getX(i) / PANEL_W + 0.5;
+      uv[i * 2 + 1] = 0.5 + pos.getY(i) / PANEL_H;
+    }
+    glass.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+    bendPanel(glass);
+    return { trim, core, glass };
+  }, []);
 
-  const seg = useMemo(() => ({
-    top: {
-      outline: [[-w, 0, 0], [w, 0, 0], [w, hTop, 0.1], [-w, hTop, 0.1]] as Pt[],
-      outer: [[-w - t, 0, 0], [w + t, 0, 0], [w + t, hTop + t, 0.12], [-w - t, hTop + t, 0.12]] as Pt[],
+  useEffect(
+    () => () => {
+      face.dispose();
+      Object.values(mats).forEach((material) => material.dispose());
+      Object.values(geometries).forEach((geometry) => geometry.dispose());
     },
-    mid: {
-      outline: [[-w, -hMid, 0], [w, -hMid, 0], [w, 0, 0], [-w, 0, 0]] as Pt[],
-      outer: [[-w - t, -hMid, 0], [w + t, -hMid, 0], [w + t, 0, 0], [-w - t, 0, 0]] as Pt[],
-    },
-    bot: {
-      outline: [[-w, 0, 0], [-tw, -hBot, 0.04], [tw, -hBot, 0.04], [w, 0, 0]] as Pt[],
-      outer: [[-w - t, 0, 0], [-tw - t * 0.7, -hBot - t, 0.05], [tw + t * 0.7, -hBot - t, 0.05], [w + t, 0, 0]] as Pt[],
-    },
-  }), [w, t, hTop, hMid, hBot, tw]);
+    [face, mats, geometries],
+  );
 
-  // Local y inside a segment whose pivot sits at vPivot.
-  const local = (vPivot: number, v: number) => (vPivot - v) * PANEL_H;
-  const handleCenter = (local(LAYOUT.topBend, LAYOUT.handleTop) + local(LAYOUT.topBend, LAYOUT.handleBottom)) / 2;
+  const handleCenter = (yOf(LAYOUT.handleTop) + yOf(LAYOUT.handleBottom)) / 2;
+  const handleV = 0.5 - handleCenter / PANEL_H;
   const handleH = (LAYOUT.handleBottom - LAYOUT.handleTop) * PANEL_H;
 
   return (
     <group>
-      {/* Rear mounting body, rising above the panel with a sloped cap */}
-      <RoundedBox args={[PANEL_W * 0.86, PANEL_H * 0.93, REAR_D]} radius={0.06} smoothness={4} position={[0.04, 0.05, REAR_BACK - REAR_D / 2]} material={mats.housing} castShadow />
-      <group position={[0.07, PANEL_H / 2 - 0.05, REAR_BACK - REAR_D / 2 - 0.05]} rotation-x={-0.35}>
-        <RoundedBox args={[PANEL_W * 0.74, 0.7, REAR_D]} radius={0.1} smoothness={5} material={mats.housing} castShadow />
-      </group>
+      {/* Rounded rear shell: slightly wider, higher at the top and shorter at the bottom. */}
+      <RoundedBox args={[0.81, 4.16, REAR_D]} radius={0.075} smoothness={6} position={[0.025, 0.1, -PANEL_D - REAR_D / 2]} material={mats.housing} castShadow />
+      <RoundedBox args={[0.77, 4.04, 0.018]} radius={0.06} smoothness={4} position={[0.025, 0.1, -PANEL_D - 0.012]} material={mats.housingEdge} />
 
-      {/* Upper camera facet, hinged at the top bend and leaning back */}
-      <group position={[0, yTop, PANEL_D]} rotation-x={-TOP_TILT}>
-        <Segment {...seg.top} vPivot={LAYOUT.topBend} mats={mats}>
-          <group position-y={local(LAYOUT.topBend, LAYOUT.camera)}>
-            <RoundedBox args={[0.42, 0.13, 0.02]} radius={0.01} material={mats.lensRing} />
-            {[-0.12, 0, 0.12].map((x) => (
-              <group key={x} position={[x, 0, 0.012]}>
-                <mesh rotation-x={Math.PI / 2} material={mats.lensRing}>
-                  <cylinderGeometry args={[0.05, 0.05, 0.012, 32]} />
-                </mesh>
-                <mesh position-z={0.007} rotation-x={Math.PI / 2} material={mats.lens}>
-                  <sphereGeometry args={[0.035, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
-                </mesh>
-              </group>
-            ))}
-          </group>
-        </Segment>
-      </group>
+      <mesh geometry={geometries.trim} material={[mats.copper, mats.housingEdge]} position-z={-PANEL_D} castShadow />
+      <mesh geometry={geometries.core} material={mats.core} position-z={-PANEL_D + 0.002} />
+      <mesh geometry={geometries.glass} material={mats.glass} position-z={0.004} />
 
-      {/* Main flat panel: keypad, fingerprint, handle, logo */}
-      <group position={[0, yTop, PANEL_D]}>
-        <Segment {...seg.mid} vPivot={LAYOUT.topBend} mats={mats}>
-          <group position-y={local(LAYOUT.topBend, LAYOUT.fingerprint)}>
-            <mesh rotation-x={Math.PI / 2} material={mats.sensor}>
-              <cylinderGeometry args={[0.075, 0.075, 0.008, 48]} />
+      {/* Three vertical lens windows in one recessed horizontal camera bar. */}
+      <PanelFeature v={LAYOUT.camera} lift={0.1}>
+        <RoundedBox args={[0.43, 0.17, 0.018]} radius={0.025} smoothness={4} material={mats.housingEdge} />
+        {[-0.12, 0, 0.12].map((x) => (
+          <group key={x} position={[x, 0, 0.014]}>
+            <RoundedBox args={[0.082, 0.132, 0.025]} radius={0.036} smoothness={6} material={mats.lensRing} />
+            <mesh position-z={0.016} scale={[0.72, 1.12, 0.3]} material={mats.lens}>
+              <sphereGeometry args={[0.047, 28, 18]} />
             </mesh>
-            <mesh position-z={0.005} material={mats.blueGlow}>
-              <torusGeometry args={[0.085, 0.009, 16, 64]} />
-            </mesh>
-            <pointLight color="#3a7bff" intensity={0.15} distance={0.6} position-z={0.08} />
+            {x === 0 && (
+              <mesh position={[0, -0.018, 0.031]} material={mats.gold}>
+                <sphereGeometry args={[0.009, 18, 12]} />
+              </mesh>
+            )}
           </group>
-          <group position-y={handleCenter}>
-            <RoundedBox args={[0.34, handleH, 0.02]} radius={0.01} material={mats.lensRing} />
-            <RoundedBox args={[0.3, handleH - 0.04, 0.05]} radius={0.015} smoothness={4} position-z={0.02} material={mats.handle} castShadow />
-            <mesh position={[0, 0, 0.046]} material={mats.handleMetal}>
-              <boxGeometry args={[0.012, handleH - 0.08, 0.003]} />
-            </mesh>
-          </group>
-        </Segment>
-      </group>
+        ))}
+      </PanelFeature>
 
-      {/* Lower chamfer, folding back and tapering to the tip */}
-      <group position={[0, yBot, PANEL_D]} rotation-x={BOTTOM_TILT}>
-        <Segment {...seg.bot} vPivot={LAYOUT.bottomBend} mats={mats} />
+      <PanelFeature v={LAYOUT.fingerprint}>
+        <mesh rotation-x={Math.PI / 2} material={mats.sensor}>
+          <cylinderGeometry args={[0.077, 0.077, 0.008, 56]} />
+        </mesh>
+        <mesh position-z={0.005} material={mats.lensRing}>
+          <torusGeometry args={[0.092, 0.004, 12, 64]} />
+        </mesh>
+        <mesh position-z={0.008} material={mats.blueGlow}>
+          <torusGeometry args={[0.083, 0.0075, 16, 72]} />
+        </mesh>
+      </PanelFeature>
+
+      {/* Small flush rectangular slider with its fine central division. */}
+      <PanelFeature v={handleV}>
+        <RoundedBox args={[0.32, handleH + 0.025, 0.018]} radius={0.035} smoothness={5} material={mats.handle} />
+        <RoundedBox args={[0.275, handleH - 0.02, 0.035]} radius={0.03} smoothness={5} position-z={0.016} material={mats.handle} castShadow />
+        <mesh position={[0, 0, 0.036]} material={mats.handleMetal}>
+          <boxGeometry args={[0.009, handleH - 0.065, 0.003]} />
+        </mesh>
+      </PanelFeature>
+    </group>
+  );
+}
+
+function DoorSlab() {
+  const paint = useMemo(() => createPaintTexture(), []);
+  const mats = useMemo(
+    () => ({
+      paint: new THREE.MeshStandardMaterial({ color: "#f0ede6", map: paint, roughness: 0.82, metalness: 0 }),
+      trim: new THREE.MeshStandardMaterial({ color: "#ded9cf", roughness: 0.78 }),
+    }),
+    [paint],
+  );
+  useEffect(() => () => { paint.dispose(); Object.values(mats).forEach((m) => m.dispose()); }, [paint, mats]);
+
+  return (
+    <group>
+      <RoundedBox args={[1.62, 5.25, DOOR_D]} radius={0.025} smoothness={3} material={mats.paint} castShadow receiveShadow />
+      {[-1, 1].map((side) => (
+        <group key={side} position-z={side * (DOOR_D / 2 + 0.006)}>
+          {[-0.68, 0.68].map((x) => (
+            <mesh key={x} position={[x, 0, 0]} material={mats.trim}>
+              <boxGeometry args={[0.018, 4.83, 0.012]} />
+            </mesh>
+          ))}
+          {[-2.405, 2.405].map((y) => (
+            <mesh key={y} position={[0, y, 0]} material={mats.trim}>
+              <boxGeometry args={[1.36, 0.018, 0.012]} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </group>
+  );
+}
+
+/** Complete lock installed through a narrow door cutaway. */
+export function SmartLock() {
+  return (
+    <group>
+      <DoorSlab />
+      <group position={[0, 0, DOOR_D / 2 + PANEL_D + REAR_D]}>
+        <ExteriorLock />
+      </group>
+      <group position={[0, 0, -DOOR_D / 2]} rotation-y={Math.PI}>
+        <InteriorLock />
       </group>
     </group>
   );
