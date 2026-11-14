@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows, Environment, Lightformer, OrbitControls } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import type { PerspectiveCamera } from "three";
+import type { Camera } from "three";
 import type { OrbitControls as OrbitImpl } from "three-stdlib";
 import { SmartLock } from "./SmartLock";
 
@@ -16,7 +16,7 @@ const VIEWS: Record<ViewName, { label: string; position: [number, number, number
 
 export function LockViewer() {
   const controls = useRef<OrbitImpl>(null);
-  const camera = useRef<PerspectiveCamera>(null);
+  const camera = useRef<Camera>(null);
   const [ready, setReady] = useState(false);
   const [view, setView] = useState<ViewName>("angle");
 
