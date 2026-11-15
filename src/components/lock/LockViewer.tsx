@@ -5,13 +5,16 @@ import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import type { Camera } from "three";
 import type { OrbitControls as OrbitImpl } from "three-stdlib";
 import { SmartLock } from "./SmartLock";
+import { DOOR_BOTTOM, DOOR_W, PLATE_CENTER_Y, PLINTH_H, STAND_H } from "./doorProfile";
 
-type ViewName = "angle" | "exterior" | "interior" | "side";
-const VIEWS: Record<ViewName, { label: string; position: [number, number, number] }> = {
-  angle: { label: "زاوية عامة", position: [4.6, 1, 9.2] },
-  exterior: { label: "الوجه الخارجي", position: [0, 0.05, 9.6] },
-  interior: { label: "الوجه الداخلي", position: [0, 0.05, -9.6] },
-  side: { label: "الجانب", position: [9.4, 0.35, 0] },
+type ViewName = "angle" | "exterior" | "interior" | "side" | "latch";
+type Vec3 = [number, number, number];
+const VIEWS: Record<ViewName, { label: string; position: Vec3; target?: Vec3 }> = {
+  angle: { label: "زاوية عامة", position: [5.1, 0.9, 10.2], target: [0, -0.2, 0] },
+  exterior: { label: "الوجه الخارجي", position: [0, 0, 10.8], target: [0, -0.2, 0] },
+  interior: { label: "الوجه الداخلي", position: [0, 0, -10.8], target: [0, -0.2, 0] },
+  side: { label: "الجانب", position: [10.6, 0.2, 0], target: [0, -0.2, 0] },
+  latch: { label: "مغلاق الباب", position: [4.3, -0.2, 1.1], target: [DOOR_W / 2, PLATE_CENTER_Y, 0] },
 };
 
 export function LockViewer() {
@@ -24,9 +27,10 @@ export function LockViewer() {
     setView(next);
     if (!camera.current) return;
     camera.current.position.set(...VIEWS[next].position);
-    camera.current.lookAt(0, 0, 0);
+    const target = VIEWS[next].target ?? [0, 0, 0];
+    camera.current.lookAt(...target);
     if (controls.current) {
-      controls.current.target.set(0, 0, 0);
+      controls.current.target.set(...target);
       controls.current.update();
     }
   };
@@ -55,7 +59,7 @@ export function LockViewer() {
         </Environment>
 
         <SmartLock />
-        <ContactShadows position={[0, -2.65, 0]} opacity={0.35} scale={7} blur={2.8} far={3} />
+        <ContactShadows position={[0, DOOR_BOTTOM - PLINTH_H - STAND_H - 0.002, 0]} opacity={0.4} scale={8} blur={2.6} far={3} />
 
         <OrbitControls
           ref={controls}
@@ -64,7 +68,7 @@ export function LockViewer() {
           enablePan={false}
           minDistance={1.6}
           maxDistance={14}
-          target={[0, 0, 0]}
+          target={VIEWS.angle.target}
         />
         <EffectComposer>
           <Bloom intensity={0.3} luminanceThreshold={0.95} mipmapBlur />

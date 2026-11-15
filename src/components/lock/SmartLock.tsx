@@ -9,6 +9,8 @@ import {
   PANEL_W, PLATE_BOTTOM, PLATE_TOP, PLATE_W, POST_ROUND, TOP_TILT, plateThickness, type ProfileStep,
 } from "./exteriorProfile";
 import { InteriorLock } from "./InteriorLock";
+import { DOOR_D, DOOR_H, DOOR_W } from "./doorProfile";
+import { DoorStand, LatchPlate } from "./DoorParts";
 
 // The exterior face is a pull handle: a thick body held off the mounting base by an
 // upper post and a lower post, with an open finger gap between them. Every side-profile
@@ -22,7 +24,6 @@ const BACK_ROUND = 0.05;
 /** Arc length of the rounded top and bottom bends. */
 const BEND_ARC = 0.36;
 export const EXTERIOR_DEPTH = FACE_FRONT;
-const DOOR_D = 0.46;
 
 const yOf = (v: number) => PANEL_H / 2 - v * PANEL_H;
 const yTop = yOf(LAYOUT.topBend);
@@ -365,7 +366,7 @@ function DoorSlab() {
 
   return (
     <group>
-      <RoundedBox args={[1.62, 5.25, DOOR_D]} radius={0.025} smoothness={3} material={mats.paint} castShadow receiveShadow />
+      <RoundedBox args={[DOOR_W, DOOR_H, DOOR_D]} radius={0.025} smoothness={3} material={mats.paint} castShadow receiveShadow />
       {[-1, 1].map((side) => (
         <group key={side} position-z={side * (DOOR_D / 2 + 0.006)}>
           {[-0.68, 0.68].map((x) => (
@@ -389,6 +390,8 @@ export function SmartLock() {
   return (
     <group>
       <DoorSlab />
+      <LatchPlate />
+      <DoorStand />
       <group position={[0, 0, DOOR_D / 2 + EXTERIOR_DEPTH]}>
         <ExteriorLock />
       </group>
