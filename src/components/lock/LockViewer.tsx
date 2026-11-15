@@ -9,7 +9,7 @@ import { DOOR_BOTTOM, DOOR_W, PLATE_CENTER_Y, PLINTH_H, STAND_H } from "./doorPr
 
 type ViewName = "angle" | "exterior" | "interior" | "side" | "latch";
 type Vec3 = [number, number, number];
-const VIEWS: Record<ViewName, { label: string; position: Vec3; target?: Vec3 }> = {
+const VIEWS: Record<ViewName, { label: string; position: Vec3; target: Vec3 }> = {
   angle: { label: "زاوية عامة", position: [5.1, 0.9, 10.2], target: [0, -0.2, 0] },
   exterior: { label: "الوجه الخارجي", position: [0, 0, 10.8], target: [0, -0.2, 0] },
   interior: { label: "الوجه الداخلي", position: [0, 0, -10.8], target: [0, -0.2, 0] },
@@ -27,7 +27,7 @@ export function LockViewer() {
     setView(next);
     if (!camera.current) return;
     camera.current.position.set(...VIEWS[next].position);
-    const target = VIEWS[next].target ?? [0, 0, 0];
+    const target = VIEWS[next].target;
     camera.current.lookAt(...target);
     if (controls.current) {
       controls.current.target.set(...target);
