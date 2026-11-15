@@ -9,3 +9,5 @@
 - [x] Remove the extra heel under the panel; make posts curved and smooth; smooth the top and bottom ends; remove hairline specks.
 - [x] Straighten the post edges (straight downward slopes), round the copper rim and face at both bends, raise the cameras off the face.
 - [x] Match the interior panel to the side photo: deeper back body, rolled top edge, concave cove, long ribbed oval neck, leaning paddle set higher, larger thumbturn lever.
+- [x] Show the latch faceplate (latch, three square bolts, screws, stamped marks) on the door edge, as in the edge photo, with a close-up view.
+- [x] Stand the door on a round base.
