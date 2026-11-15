@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { RoundedBox } from "@react-three/drei";
 import { createFaceTextures, LAYOUT } from "./faceTexture";
 import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
-import { createPaintTexture, extrudeSide, roundedPoly, type Pt } from "./geometry";
+import { createPaintTexture, extrudeSide, indexedGeometry, roundedPoly, zipCap, type Pt } from "./geometry";
 import {
   BLOCK_PROFILE, BLOCK_W, BOTTOM_TILT, FACE_FRONT, NECK_PROFILE, NECK_W, PANEL_D, PANEL_H,
   PANEL_W, PLATE_BOTTOM, PLATE_TOP, PLATE_W, POST_ROUND, TOP_TILT, plateThickness, type ProfileStep,
@@ -68,44 +68,6 @@ function outlineContour(pad: number) {
     return a.add(b).normalize();
   });
   return { contour, normals };
-}
-
-/**
- * Fills a convex ring of points by zipping its two sides together from bottom to top,
- * so every triangle stays short in height and follows the bends. `front` faces +z.
- */
-function zipCap(ys: number[], front: boolean, offset = 0) {
-  const n = ys.length;
-  let bottom = 0;
-  let top = 0;
-  for (let i = 1; i < n; i++) {
-    if (ys[i]! < ys[bottom]!) bottom = i;
-    if (ys[i]! > ys[top]!) top = i;
-  }
-  const index: number[] = [];
-  const tri = (a: number, b: number, c: number) =>
-    front ? index.push(a + offset, c + offset, b + offset) : index.push(a + offset, b + offset, c + offset);
-  let r = bottom; // walks up the right side (forwards)
-  let l = bottom; // walks up the left side (backwards)
-  while (r !== top || l !== top) {
-    const nr = (r + 1) % n;
-    const nl = (l - 1 + n) % n;
-    if (l === top || (r !== top && ys[nr]! <= ys[nl]!)) {
-      tri(r, l, nr);
-      r = nr;
-    } else {
-      tri(r, l, nl);
-      l = nl;
-    }
-  }
-  return index;
-}
-
-function indexedGeometry(positions: number[], index: number[]) {
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setIndex(index);
-  return geometry;
 }
 
 /**

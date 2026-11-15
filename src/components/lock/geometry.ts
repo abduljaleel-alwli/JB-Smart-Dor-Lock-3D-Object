@@ -79,3 +79,41 @@ export function extrudeSide(shape: THREE.Shape, width: number, bevel = 0.015, ke
 export function polyShape(points: [number, number][]) {
   return new THREE.Shape(points.map(([x, y]) => new THREE.Vector2(x, y)));
 }
+
+/**
+ * Fills a y-monotone ring of points by zipping its two sides together from bottom to top,
+ * so every triangle stays short in height and follows the bends. `front` faces +z.
+ */
+export function zipCap(ys: number[], front: boolean, offset = 0) {
+  const n = ys.length;
+  let bottom = 0;
+  let top = 0;
+  for (let i = 1; i < n; i++) {
+    if (ys[i]! < ys[bottom]!) bottom = i;
+    if (ys[i]! > ys[top]!) top = i;
+  }
+  const index: number[] = [];
+  const tri = (a: number, b: number, c: number) =>
+    front ? index.push(a + offset, c + offset, b + offset) : index.push(a + offset, b + offset, c + offset);
+  let r = bottom; // walks up the right side (forwards)
+  let l = bottom; // walks up the left side (backwards)
+  while (r !== top || l !== top) {
+    const nr = (r + 1) % n;
+    const nl = (l - 1 + n) % n;
+    if (l === top || (r !== top && ys[nr]! <= ys[nl]!)) {
+      tri(r, l, nr);
+      r = nr;
+    } else {
+      tri(r, l, nl);
+      l = nl;
+    }
+  }
+  return index;
+}
+
+export function indexedGeometry(positions: number[], index: number[]) {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(index);
+  return geometry;
+}
